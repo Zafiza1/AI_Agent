@@ -4,10 +4,10 @@ A multi-tenant platform where AI agents maintain software (debugging, fixing, te
 deploying and monitoring) under human control: every risky action passes a policy engine, an
 approval workflow and an append-only audit log, and code changes happen only in sandboxes.
 
-> **Status: Phase 1 (Foundation) is implemented.** Authentication, organizations, RBAC, the
-> project registry (repositories, environments, servers, databases, services), encrypted
-> environment secrets, audit logging, the dashboard and the Docker stack are in place.
-> AI agents arrive in Phase 3. See the [roadmap](#roadmap).
+> **Status: Phases 1–2 are implemented.** Foundation (authentication, organizations, RBAC, the
+> project registry, encrypted secrets, audit logging, dashboard, Docker stack) and the GitHub
+> integration (GitHub App or token connections, repository linking, branches, commits, pull
+> requests, signed webhooks). AI agents arrive in Phase 3. See the [roadmap](#roadmap).
 
 ## Architecture
 
@@ -28,7 +28,7 @@ React dashboard ──► Laravel control plane ──► PostgreSQL
 | Cache / queue | — | Redis 7 | 6379 |
 
 Design documents: [architecture](docs/architecture.md) · [database](docs/database.md) ·
-[security](docs/security.md) · [permissions](docs/permissions.md) · [API](docs/api.md) ·
+[security](docs/security.md) · [permissions](docs/permissions.md) · [API](docs/api.md) · [GitHub](docs/github.md) ·
 [agents](docs/agent-architecture.md) · [tools](docs/tools.md) · [sandbox](docs/sandbox.md) ·
 [deployment](docs/deployment.md) · [monitoring](docs/monitoring.md) · [development](docs/development.md)
 
@@ -85,8 +85,13 @@ contract and are write-only over the API.
 exposes its default budgets (`AGENT_MAX_STEPS`, `AGENT_MAX_TOOL_CALLS`, `AGENT_MAX_RETRIES`,
 `AGENT_MAX_RUNTIME_SECONDS`).
 
-**GitHub integration** starts in Phase 2. Today, repositories are registered by URL and
-shown as `not_connected`.
+**GitHub integration** ([docs/github.md](docs/github.md)). An admin connects GitHub under
+**Settings → Integrations**, either with a fine-grained personal access token (works out of the
+box) or by installing the platform's GitHub App (set the `GITHUB_APP_*` variables in `.env`).
+Repositories registered on a project are then connected from its **Repositories** tab: the
+platform syncs pull requests, lists branches and commits, opens `fix/…`-style branches and pull
+requests (never writing to the default branch), and receives signed webhooks. GitHub cannot reach
+`localhost`; set `GITHUB_WEBHOOK_BASE_URL` to a tunnel URL to receive webhooks in development.
 
 ## Development without Docker
 
@@ -122,8 +127,8 @@ rollback are part of Phase 6; the target design is in [docs/deployment.md](docs/
 | Phase | Scope | Status |
 |---|---|---|
 | 1 | Foundation: Docker, Laravel, React, PostgreSQL, Redis, auth, organizations, RBAC, project registry, secrets, audit | Done |
-| 2 | GitHub integration: app install, webhooks, branches, commits, pull requests | Next |
-| 3 | Agent engine: orchestrator, LLM providers, tool gateway, policy engine, tasks, approvals | Planned |
+| 2 | GitHub integration: app install, webhooks, branches, commits, pull requests | Done |
+| 3 | Agent engine: orchestrator, LLM providers, tool gateway, policy engine, tasks, approvals | Next |
 | 4 | Sandbox: per-task Docker workspaces, clone, test, build | Planned |
 | 5 | Maintenance agents: debug, fix, test, security scan, review, PR | Planned |
 | 6 | Infrastructure: servers, Docker, logs, deployments, rollback | Planned |

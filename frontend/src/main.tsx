@@ -8,12 +8,15 @@ import './index.css'
 import { ApiError } from './lib/api'
 import { AuthProvider, useAuth } from './lib/auth'
 import { AuditLogsPage } from './pages/AuditLogsPage'
+import { GitHubCallbackPage } from './pages/GitHubCallbackPage'
 import { LoginPage, RegisterPage } from './pages/AuthPages'
 import { OnboardingPage } from './pages/OnboardingPage'
 import { OverviewPage } from './pages/OverviewPage'
 import { PlannedPage } from './pages/PlannedPage'
 import { ProjectDetailPage } from './pages/ProjectDetailPage'
 import { ProjectsPage } from './pages/ProjectsPage'
+import { PullRequestsPage } from './pages/PullRequestsPage'
+import { RepositoriesPage } from './pages/RepositoriesPage'
 import { SettingsPage } from './pages/SettingsPage'
 
 const queryClient = new QueryClient({
@@ -78,6 +81,9 @@ const router = createBrowserRouter([
               { index: true, element: <OverviewPage /> },
               { path: 'projects', element: <ProjectsPage /> },
               { path: 'projects/:projectId', element: <ProjectDetailPage /> },
+              { path: 'repositories', element: <RepositoriesPage /> },
+              { path: 'pull-requests', element: <PullRequestsPage /> },
+              { path: 'integrations/github/callback', element: <RequirePermission permission="integrations.manage"><GitHubCallbackPage /></RequirePermission> },
               { path: 'audit-logs', element: <RequirePermission permission="audit.view"><AuditLogsPage /></RequirePermission> },
               { path: 'settings', element: <SettingsPage /> },
               { path: 'planned/:feature', element: <PlannedPage /> },

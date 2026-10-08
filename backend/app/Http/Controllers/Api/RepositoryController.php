@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\RepositoryConnectionStatus;
 use App\Enums\RepositoryProvider;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\RepositoryResource;
 use App\Models\Project;
 use App\Models\Repository;
 use App\Services\Audit\AuditLogger;
+use App\Services\Git\RepositoryLinker;
 use App\Support\Rbac\Permission;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,8 +19,8 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 
 /**
- * Repository registry. Phase 1 stores repository metadata only; provider
- * connection, webhooks and branch/PR operations arrive in Phase 2.
+ * Repository registry. Provider operations (connect, branches, commits, pull
+ * requests) live in Git\RepositoryGitController.
  */
 class RepositoryController extends Controller
 {
@@ -29,7 +31,32 @@ class RepositoryController extends Controller
         Gate::authorize(Permission::ProjectsView->value);
 
         return RepositoryResource::collection(
-            $project->repositories()->orderByDesc('is_primary')->orderBy('url')->get()
+            $project->repositories()->with('gitConnection')->withCount('openPullRequests')
+                ->orderByDesc('is_primary')->orderBy('url')->get()
+        );
+    }
+
+    /**
+     * Every repository of the organization, across projects.
+     */
+    public function all(Request $request): AnonymousResourceCollection
+    {
+        Gate::authorize(Permission::ProjectsView->value);
+
+        $filters = $request->validate([
+            'connection_status' => ['nullable', Rule::enum(RepositoryConnectionStatus::class)],
+            'search' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        return RepositoryResource::collection(
+            Repository::query()
+                ->with(['gitConnection', 'project'])
+                ->withCount('openPullRequests')
+                ->whereHas('project')
+                ->when($filters['connection_status'] ?? null, fn ($q, $status) => $q->where('connection_status', $status))
+                ->when($filters['search'] ?? null, fn ($q, $search) => $q->whereRaw('lower(coalesce(full_name, url)) like ?', ['%'.mb_strtolower($search).'%']))
+                ->orderBy('full_name')
+                ->paginate(50)
         );
     }
 
@@ -96,9 +123,14 @@ class RepositoryController extends Controller
         return new RepositoryResource($repository);
     }
 
-    public function destroy(Repository $repository): JsonResponse
+    public function destroy(Repository $repository, RepositoryLinker $linker): JsonResponse
     {
         Gate::authorize(Permission::ProjectsUpdate->value);
+
+        // Remove the platform's webhook from the provider before forgetting the repository.
+        if ($repository->git_connection_id) {
+            $linker->disconnect($repository);
+        }
 
         $repository->delete();
         $this->audit->record('repository.deleted', $repository, ['url' => $repository->url]);

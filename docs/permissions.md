@@ -20,6 +20,8 @@ Roles are per organization membership and defined in code
 | `environments.manage_protected` | ✓ | ✓ | | |
 | `secrets.manage` | ✓ | ✓ | | |
 | `infrastructure.manage` | ✓ | ✓ | ✓ | |
+| `integrations.manage` | ✓ | ✓ | | |
+| `repositories.write` | ✓ | ✓ | ✓ | |
 | `audit.view` | ✓ | ✓ | | |
 
 The matrix is also served by `GET /api/meta` and rendered in **Settings**.
@@ -32,6 +34,12 @@ The matrix is also served by `GET /api/meta` and rendered in **Settings**.
 * Changing a **protected** environment, its variables, or any environment's `is_protected` /
   `requires_approval` flags requires `environments.manage_protected`.
 * Writing environment variables requires both `secrets.manage` and the environment's manage permission.
+* `integrations.manage` covers adding, verifying and removing git connections (GitHub App
+  installations, access tokens). Any member may list connections; credentials are never returned.
+* Connecting, syncing or disconnecting a repository requires `projects.update`.
+* `repositories.write` (branches, commits, pull requests) is further limited by the
+  [branch policy](github.md#branch-policy): never the default or long-lived branches, only
+  `fix/`, `feature/`, `refactor/`, `security/`, `maintenance/` work branches.
 
 ## Enforcement
 

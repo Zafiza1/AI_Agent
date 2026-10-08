@@ -34,20 +34,6 @@ export const roadmap: RoadmapItem[] = [
     capabilities: ['Risk-based approval requests', 'Approve / reject with reason', 'Expiry and full audit trail'],
   },
   {
-    slug: 'repositories',
-    title: 'Repositories',
-    phase: 2,
-    summary: 'Connect GitHub to sync repositories, receive webhooks and open pull requests.',
-    capabilities: ['GitHub App installation', 'Webhooks for issues, pushes and CI', 'Branches, commits and pull requests'],
-  },
-  {
-    slug: 'pull-requests',
-    title: 'Pull Requests',
-    phase: 2,
-    summary: 'Pull requests opened by agents, with tests, security scan and review status.',
-    capabilities: ['AI-authored branches (fix/, feature/, security/ …)', 'CI status and retry on failure', 'Human review before merge'],
-  },
-  {
     slug: 'servers',
     title: 'Servers',
     phase: 6,

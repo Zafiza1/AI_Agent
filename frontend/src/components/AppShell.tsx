@@ -55,8 +55,8 @@ const sections: { title?: string; items: NavItem[] }[] = [
   {
     title: 'Delivery',
     items: [
-      { to: '/planned/repositories', label: 'Repositories', icon: FolderGit2 },
-      { to: '/planned/pull-requests', label: 'Pull Requests', icon: GitPullRequest },
+      { to: '/repositories', label: 'Repositories', icon: FolderGit2 },
+      { to: '/pull-requests', label: 'Pull Requests', icon: GitPullRequest },
       { to: '/planned/deployments', label: 'Deployments', icon: Rocket },
     ],
   },

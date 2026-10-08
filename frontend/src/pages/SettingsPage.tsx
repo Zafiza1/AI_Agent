@@ -1,22 +1,30 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, Trash2, UserPlus, X } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState, type FormEvent } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Badge, Button, Card, CardHeader, ConfirmDialog, ErrorBanner, Field, Input, LoadingBlock, Modal, PageHeader, Select, Table, Td } from '../components/ui'
 import { api, ApiError } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { initials, timeAgo, titleCase } from '../lib/format'
 import { useMeta } from '../lib/queries'
 import type { Member, Permission, Role } from '../lib/types'
+import { IntegrationsCard } from './settings/IntegrationsCard'
 
 export function SettingsPage() {
   const { organization } = useAuth()
+  const { hash } = useLocation()
+
+  // Deep links such as /settings#integrations.
+  useEffect(() => {
+    if (hash) document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: 'smooth' })
+  }, [hash])
 
   return (
     <>
       <PageHeader title="Settings" description={`Organization settings for ${organization?.name}`} />
       <div className="space-y-6">
         <OrganizationCard />
+        <IntegrationsCard />
         <MembersCard />
         <RoleMatrix />
         <DangerZone />

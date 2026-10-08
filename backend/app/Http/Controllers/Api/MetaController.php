@@ -4,13 +4,17 @@ namespace App\Http\Controllers\Api;
 
 use App\Enums\DatabaseEngine;
 use App\Enums\EnvironmentType;
+use App\Enums\GitConnectionStatus;
 use App\Enums\ProjectStatus;
+use App\Enums\PullRequestState;
 use App\Enums\RepositoryProvider;
 use App\Enums\ResourceStatus;
 use App\Enums\ServerConnectionType;
 use App\Enums\ServiceRuntime;
 use App\Enums\ServiceType;
 use App\Http\Controllers\Controller;
+use App\Services\Git\GitHub\GitHubAppAuth;
+use App\Support\Git\BranchPolicy;
 use App\Support\Rbac\Permission;
 use App\Support\Rbac\Role;
 use Illuminate\Http\JsonResponse;
@@ -20,7 +24,7 @@ use Illuminate\Http\JsonResponse;
  */
 class MetaController extends Controller
 {
-    public function __invoke(): JsonResponse
+    public function __invoke(GitHubAppAuth $githubApp): JsonResponse
     {
         $values = fn (string $enum) => array_column($enum::cases(), 'value');
 
@@ -40,6 +44,17 @@ class MetaController extends Controller
                     'service_runtime' => $values(ServiceRuntime::class),
                     'server_connection_type' => $values(ServerConnectionType::class),
                     'resource_status' => $values(ResourceStatus::class),
+                    'git_connection_status' => $values(GitConnectionStatus::class),
+                    'pull_request_state' => $values(PullRequestState::class),
+                ],
+                'integrations' => [
+                    'github_app' => [
+                        'enabled' => $githubApp->configured(),
+                        'slug' => $githubApp->configured() ? $githubApp->slug() : null,
+                    ],
+                ],
+                'git' => [
+                    'work_branch_prefixes' => BranchPolicy::WORK_PREFIXES,
                 ],
             ],
         ]);

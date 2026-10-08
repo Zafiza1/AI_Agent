@@ -31,6 +31,7 @@ enum Role: string
                 Permission::ProjectsUpdate,
                 Permission::EnvironmentsManage,
                 Permission::InfrastructureManage,
+                Permission::RepositoriesWrite,
             ],
             self::Viewer => [
                 Permission::OrganizationView,

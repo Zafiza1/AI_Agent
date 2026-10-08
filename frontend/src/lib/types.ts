@@ -14,6 +14,8 @@ export type Permission =
   | 'environments.manage_protected'
   | 'secrets.manage'
   | 'infrastructure.manage'
+  | 'integrations.manage'
+  | 'repositories.write'
   | 'audit.view'
 
 export type ProjectStatus = 'onboarding' | 'active' | 'paused' | 'archived'
@@ -46,6 +48,8 @@ export interface Member {
   joined_at: string
 }
 
+export type WebhookStatus = 'not_configured' | 'managed' | 'active' | 'failed'
+
 export interface Repository {
   id: string
   project_id: string
@@ -54,9 +58,102 @@ export interface Repository {
   full_name: string | null
   default_branch: string
   is_primary: boolean
+  is_private: boolean | null
   connection_status: 'not_connected' | 'connected' | 'error'
+  connection_error: string | null
+  git_connection_id: string | null
+  git_connection?: Pick<GitConnection, 'id' | 'name' | 'auth_type' | 'status'> | null
+  project?: { id: string; name: string }
+  webhook_status: WebhookStatus
+  webhook_error: string | null
+  last_commit_sha: string | null
+  last_pushed_at: string | null
+  last_synced_at: string | null
+  open_pull_requests_count?: number
   created_at: string
   updated_at: string
+}
+
+export interface GitConnection {
+  id: string
+  provider: string
+  auth_type: 'github_app' | 'personal_access_token'
+  name: string
+  account_login: string | null
+  account_type: string | null
+  installation_id: number | null
+  scopes: string[] | Record<string, string>
+  status: 'active' | 'suspended' | 'error' | 'revoked'
+  last_error: string | null
+  last_verified_at: string | null
+  repositories_count?: number
+  created_by?: User | null
+  created_at: string
+}
+
+export interface RemoteRepository {
+  id: string
+  full_name: string
+  url: string
+  default_branch: string
+  private: boolean
+  archived: boolean
+  can_push: boolean
+}
+
+export interface Branch {
+  name: string
+  sha: string
+  is_default: boolean
+  is_protected: boolean
+  is_writable: boolean
+}
+
+export interface Commit {
+  sha: string
+  short_sha: string
+  message: string
+  author_name: string | null
+  author_login: string | null
+  committed_at: string | null
+  url: string | null
+}
+
+export interface PullRequest {
+  id: string
+  project_id: string
+  repository_id: string
+  provider: string
+  number: number
+  title: string
+  state: 'open' | 'closed' | 'merged'
+  is_draft: boolean
+  head_branch: string
+  head_sha: string | null
+  base_branch: string
+  url: string | null
+  author_login: string | null
+  checks_status: 'pending' | 'success' | 'failure' | 'neutral' | null
+  opened_via_platform: boolean
+  opened_by?: User | null
+  repository?: { id: string; full_name: string | null }
+  project?: { id: string; name: string }
+  opened_at: string | null
+  merged_at: string | null
+  closed_at: string | null
+  synced_at: string | null
+  created_at: string
+}
+
+export interface WebhookDelivery {
+  id: string
+  delivery_id: string
+  event: string
+  action: string | null
+  status: 'received' | 'processed' | 'ignored' | 'failed'
+  error: string | null
+  received_at: string
+  processed_at: string | null
 }
 
 export interface Environment {
@@ -186,9 +283,13 @@ export interface Meta {
     | 'service_type'
     | 'service_runtime'
     | 'server_connection_type'
-    | 'resource_status',
+    | 'resource_status'
+    | 'git_connection_status'
+    | 'pull_request_state',
     string[]
   >
+  integrations: { github_app: { enabled: boolean; slug: string | null } }
+  git: { work_branch_prefixes: string[] }
 }
 
 export interface Overview {

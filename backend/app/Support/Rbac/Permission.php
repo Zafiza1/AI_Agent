@@ -26,5 +26,10 @@ enum Permission: string
     case SecretsManage = 'secrets.manage';
     case InfrastructureManage = 'infrastructure.manage';
 
+    // Connect and remove git provider accounts (GitHub App installations, tokens).
+    case IntegrationsManage = 'integrations.manage';
+    // Create branches, commits and pull requests in connected repositories.
+    case RepositoriesWrite = 'repositories.write';
+
     case AuditView = 'audit.view';
 }

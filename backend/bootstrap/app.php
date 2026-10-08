@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\ResolveOrganization;
+use App\Services\Git\GitProviderException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -32,6 +33,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        // Provider failures carry a user-safe message (never credentials).
+        $exceptions->render(fn (GitProviderException $e) => response()->json(
+            ['message' => $e->getMessage()],
+            $e->httpStatus(),
+        ));
 
         $exceptions->dontFlash(['password', 'password_confirmation', 'current_password', 'value']);
     })->create();

@@ -42,6 +42,29 @@ project, and malformed IDs are rejected before reaching the database.
 * System health endpoint logs dependency errors but never returns hostnames or DSNs.
 * Development seeder refuses to run in production.
 
+## Implemented in Phase 2 (GitHub integration)
+
+Details: [github.md](github.md).
+
+* **Git credentials.** Access tokens are verified with GitHub before storage, encrypted at rest,
+  hidden from serialization and never returned. GitHub App connections store no secret: hour-long
+  installation tokens are minted from the App key and cached encrypted.
+* **Installation linking.** The App flow requires a single-use `state` bound to the organization
+  and user, plus an OAuth check that the user's GitHub account can access the installation.
+  An installation id cannot be linked to two organizations.
+* **Tenant isolation.** Connections, pull requests and deliveries are tenant-scoped; another
+  organization's connection id is "not found" when linking a repository.
+* **Webhooks.** HMAC-SHA256 (`X-Hub-Signature-256`) verified with `hash_equals` before anything is
+  parsed or stored; App and per-repository secrets are separate; deliveries are idempotent on
+  `X-GitHub-Delivery`, rate limited (600/min per IP), size limited (10 MB), processed off the request
+  path, and their payloads are never exposed by the API.
+* **No direct writes to protected branches.** `BranchPolicy` refuses the default and long-lived
+  branches and requires work-branch prefixes; refusals are audited as `denied`. Commits are
+  fast-forward only (`force: false`), and file paths are validated against traversal and `.git/`.
+* **Provider errors** are mapped to fixed, user-safe messages (no tokens or headers).
+* All write operations are audited with their tool name and risk (`git.create_branch`,
+  `git.commit`, `git.create_pull_request`: medium).
+
 ## Risk levels and policy (Phase 3+)
 
 | Level | Examples | Default |

@@ -115,6 +115,11 @@ erDiagram
     environments |o--o{ services : hosts
     servers |o--o{ services : runs
     organizations ||--o{ audit_logs : records
+    organizations ||--o{ git_connections : "Phase 2"
+    git_connections |o--o{ repositories : links
+    repositories ||--o{ pull_requests : "Phase 2"
+    repositories |o--o{ webhook_deliveries : "Phase 2"
+    git_connections |o--o{ webhook_deliveries : receives
 
     projects ||--o{ agent_tasks : "Phase 3"
     agent_tasks ||--o{ agent_runs : "Phase 3"
@@ -209,7 +214,7 @@ Full detail: [security.md](security.md) and [permissions.md](permissions.md).
 | Phase | Scope | Status |
 |---|---|---|
 | 1 | Foundation: Docker, Laravel, React, PostgreSQL, Redis, auth, organizations, RBAC, projects, environments, infra registry, secrets, audit log | **Implemented** |
-| 2 | GitHub integration: app install, repositories, webhooks, branches, commits, PRs | Planned |
+| 2 | GitHub integration: app install, repositories, webhooks, branches, commits, PRs | **Implemented** ([github.md](github.md)) |
 | 3 | Agent engine: FastAPI, orchestrator, LLM providers, tool gateway, policy engine, tasks/runs/steps, approvals | Planned (service skeleton exists) |
 | 4 | Sandbox: per-task Docker workspace, clone, install, test, build, destroy | Planned |
 | 5 | Maintenance agents: debug, code fix, test, security scan, review, PR | Planned |
@@ -238,3 +243,24 @@ Full detail: [security.md](security.md) and [permissions.md](permissions.md).
 10. Agent service skeleton: FastAPI app with `/health` and config only.
 11. Tests (feature tests for auth, tenancy isolation, RBAC, projects, environments,
     secrets, audit), seed data, documentation.
+
+## 11. Phase 2 implementation (GitHub integration)
+
+Full description: [github.md](github.md).
+
+1. `git_connections` per organization: GitHub App installations (state + OAuth-verified linking,
+   one organization per installation) and verified, encrypted personal access tokens.
+2. `GitProvider` contract with DTOs; `GitHubProvider` (REST API, Git Data API commits without
+   force); `GitProviderFactory` resolves credentials (App JWT → cached installation tokens).
+3. Repository linking: access check, canonical metadata, per-repository webhook with its own
+   secret (token connections) or App-managed webhooks, PR import, sync and disconnect.
+4. `BranchPolicy`: no writes to default/long-lived branches; work-branch prefixes required.
+5. Branch, commit and pull request endpoints (`repositories.write`), audited as MEDIUM tool calls.
+6. Webhook receiver: HMAC verification, idempotent `webhook_deliveries`, queued processing that
+   updates pull requests, CI status and repository state and emits `GitHubEventReceived`
+   (`github.issue.created`, `github.pull_request.*`, `ci.build.failed`, …) for Phase 3/7.
+7. Dashboard: Settings → Integrations, App callback page, connect/sync/disconnect in the project's
+   Repositories tab with branches, commits, PRs and webhook deliveries, organization-wide
+   Repositories and Pull Requests pages.
+8. Tests with every GitHub call faked (connections, App flow, repository operations, webhooks,
+   branch policy), on SQLite and PostgreSQL.

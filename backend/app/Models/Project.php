@@ -57,6 +57,14 @@ class Project extends Model
     }
 
     /**
+     * @return HasMany<PullRequest, $this>
+     */
+    public function pullRequests(): HasMany
+    {
+        return $this->hasMany(PullRequest::class);
+    }
+
+    /**
      * @return HasMany<Environment, $this>
      */
     public function environments(): HasMany

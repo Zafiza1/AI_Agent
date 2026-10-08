@@ -30,6 +30,14 @@ x-backend: &backend
     QUEUE_CONNECTION: redis
     SESSION_DRIVER: redis
     AGENT_ENGINE_URL: http://agent:8001
+    # GitHub integration (optional; personal access tokens work without the App). See docs/github.md.
+    GITHUB_APP_ID: ${GITHUB_APP_ID:-}
+    GITHUB_APP_SLUG: ${GITHUB_APP_SLUG:-}
+    GITHUB_APP_CLIENT_ID: ${GITHUB_APP_CLIENT_ID:-}
+    GITHUB_APP_CLIENT_SECRET: ${GITHUB_APP_CLIENT_SECRET:-}
+    GITHUB_APP_PRIVATE_KEY_PATH: ${GITHUB_APP_PRIVATE_KEY_PATH:-}
+    GITHUB_APP_WEBHOOK_SECRET: ${GITHUB_APP_WEBHOOK_SECRET:-}
+    GITHUB_WEBHOOK_BASE_URL: ${GITHUB_WEBHOOK_BASE_URL:-}
   depends_on:
     postgres:
       condition: service_healthy

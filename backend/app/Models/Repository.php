@@ -2,19 +2,29 @@
 
 namespace App\Models;
 
+use App\Enums\PullRequestState;
 use App\Enums\RepositoryConnectionStatus;
 use App\Enums\RepositoryProvider;
+use App\Enums\WebhookStatus;
 use App\Models\Concerns\BelongsToOrganization;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * A source repository registered for a project. The provider connection
- * (GitHub App installation, webhooks) is established in Phase 2.
+ * A source repository registered for a project. Once linked to a GitConnection
+ * the platform can read it, open branches and pull requests, and receive webhooks.
+ * `webhook_secret` is encrypted at rest and never serialized.
  */
-#[Fillable(['provider', 'url', 'full_name', 'default_branch', 'is_primary', 'connection_status', 'external_id'])]
+#[Fillable([
+    'provider', 'url', 'full_name', 'default_branch', 'is_primary', 'is_private', 'connection_status',
+    'connection_error', 'external_id', 'webhook_status', 'webhook_id', 'webhook_error',
+    'last_commit_sha', 'last_pushed_at', 'last_synced_at',
+])]
+#[Hidden(['webhook_secret'])]
 class Repository extends Model
 {
     use BelongsToOrganization, HasUuids;
@@ -28,6 +38,7 @@ class Repository extends Model
         'default_branch' => 'main',
         'is_primary' => false,
         'connection_status' => 'not_connected',
+        'webhook_status' => 'not_configured',
     ];
 
     protected function casts(): array
@@ -35,8 +46,18 @@ class Repository extends Model
         return [
             'provider' => RepositoryProvider::class,
             'connection_status' => RepositoryConnectionStatus::class,
+            'webhook_status' => WebhookStatus::class,
+            'webhook_secret' => 'encrypted',
             'is_primary' => 'boolean',
+            'is_private' => 'boolean',
+            'last_pushed_at' => 'datetime',
+            'last_synced_at' => 'datetime',
         ];
+    }
+
+    public function isConnected(): bool
+    {
+        return $this->git_connection_id !== null && $this->connection_status === RepositoryConnectionStatus::Connected;
     }
 
     /**
@@ -56,5 +77,29 @@ class Repository extends Model
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
+    }
+
+    /**
+     * @return BelongsTo<GitConnection, $this>
+     */
+    public function gitConnection(): BelongsTo
+    {
+        return $this->belongsTo(GitConnection::class);
+    }
+
+    /**
+     * @return HasMany<PullRequest, $this>
+     */
+    public function pullRequests(): HasMany
+    {
+        return $this->hasMany(PullRequest::class);
+    }
+
+    /**
+     * @return HasMany<PullRequest, $this>
+     */
+    public function openPullRequests(): HasMany
+    {
+        return $this->pullRequests()->where('state', PullRequestState::Open->value);
     }
 }

@@ -71,11 +71,47 @@ No credentials are stored in these tables.
 
 The `AuditLog` model throws on update and delete.
 
+## Phase 2 tables (GitHub integration)
+
+Migration: [2026_10_08_100001_create_git_integration_tables.php](../backend/database/migrations/2026_10_08_100001_create_git_integration_tables.php).
+Details of the flows: [github.md](github.md).
+
+### git_connections
+| Column | Notes |
+|---|---|
+| organization_id | uuid FK cascade |
+| provider, auth_type | `github` · `github_app` / `personal_access_token` |
+| name, account_login, account_type | display; account the credentials belong to |
+| installation_id | GitHub App installation, **globally unique** (one organization per installation) |
+| credentials | ciphertext (`encrypted` cast) of a token; hidden, never returned; null for App connections |
+| scopes | jsonb: token scopes or App permissions |
+| status | `active`, `suspended`, `error`, `revoked` |
+| last_error, last_verified_at | result of the last verification |
+
+### repositories (added columns)
+`git_connection_id` (FK, null on delete), `is_private`, `connection_error`, `webhook_status`
+(`not_configured`/`managed`/`active`/`failed`), `webhook_id`, `webhook_secret` (ciphertext, hidden),
+`webhook_error`, `last_commit_sha`, `last_pushed_at`, `last_synced_at`. `external_id` holds the
+GitHub repository id.
+
+### pull_requests
+Local mirror kept current by syncs and webhooks: `organization_id`, `project_id`, `repository_id`,
+`provider`, `external_id`, `number` (unique per repository), `title`, `state`
+(`open`/`closed`/`merged`), `is_draft`, `head_branch`, `head_sha`, `base_branch`, `url`,
+`author_login`, `checks_status` (`pending`/`success`/`failure`/`neutral`, reset when the head
+changes), `opened_via_platform`, `opened_by`, `opened_at`, `merged_at`, `closed_at`, `synced_at`.
+
+### webhook_deliveries
+Inbound webhooks, written only after signature verification: `organization_id` (resolved, no FK),
+`git_connection_id`, `repository_id`, `external_repository_id`, `provider`, `delivery_id`
+(unique with provider: idempotency), `event`, `action`, `status`
+(`received`/`processed`/`ignored`/`failed`), `payload` (jsonb, never exposed by the API),
+`error`, `received_at`, `processed_at`.
+
 ## Planned tables (later phases)
 
 | Phase | Tables |
 |---|---|
-| 2 | `git_connections`, `webhook_deliveries`, `pull_requests` |
 | 3 | `agent_tasks`, `agent_runs`, `agent_steps`, `agent_tool_calls`, `approvals`, `organization_policies` |
 | 4 | `sandboxes` |
 | 6 | `deployments` (`commit_sha`, `image_tag`, `environment_id`, `deployed_by`, `deployed_at`, `status`), `rollbacks` |
