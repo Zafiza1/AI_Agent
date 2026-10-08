@@ -1,0 +1,28 @@
+# UI/UX Pro Max skills (install via: npx ui-ux-pro-max-cli init --ai claude)
+.claude/skills/ui-ux-pro-max/
+.claude/skills/banner-design/
+.claude/skills/brand/
+.claude/skills/design/
+.claude/skills/design-system/
+.claude/skills/slides/
+.claude/skills/ui-styling/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+
+# Node / build output
+node_modules/
+dist/
+
+# Logs and OS files
+*.log
+.DS_Store
+Thumbs.db
